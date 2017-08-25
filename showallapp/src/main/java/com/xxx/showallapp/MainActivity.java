@@ -69,18 +69,6 @@ public class MainActivity extends AppCompatActivity {
         applicationDatas = new ArrayList<>();
 
 
-        String filterArrStr = readFile(getDir(rootDir) + File.separator + "filter.txt");
-        if (filterArrStr.length() > 0) {
-            try {
-                filterArrStr = filterArrStr.substring("--_v_--".length());
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        //得到包名集合
-        filterArr = filterArrStr.split("--_v_--");
-
 //        Arrays.sort(filterArr, new Comparator<String>() {//根据时间排序
 //            @Override
 //            public int compare(String o1, String o2) {
@@ -172,6 +160,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void refresh() {
+        String filterArrStr = readFile(getDir(rootDir) + File.separator + "filter.txt");
+        if (filterArrStr.length() > 0) {
+            try {
+                filterArrStr = filterArrStr.substring("--_v_--".length());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        //得到包名集合
+        filterArr = filterArrStr.split("--_v_--");
+
         applicationDatas.clear();
         new Thread() {
             @Override
