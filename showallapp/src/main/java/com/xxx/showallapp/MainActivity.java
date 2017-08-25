@@ -181,9 +181,10 @@ public class MainActivity extends AppCompatActivity {
                         .getInstalledPackages(PackageManager.GET_UNINSTALLED_PACKAGES);
                 for (PackageInfo packs : packageInfos) {
                     if (true || (packs.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
-                        boolean filterFlag = true;//两次遍历有问题，暂时这样解决
+                        boolean filterFlag = true;//两次遍历有问题，暂时这样解决  用置空稍微提高下速度，只在第一次打开才更新过滤
                         for (int i = 0; i < filterArr.length; i++) {
-                            if (TextUtils.equals(packs.packageName, filterArr[i].split(",_,")[0])){
+                            if (filterArr[i] != null && TextUtils.equals(packs.packageName, filterArr[i].split(",_,")[0])){
+                                filterArr[i] = null;
                                 filterFlag = false;
                                 break;
                             }
