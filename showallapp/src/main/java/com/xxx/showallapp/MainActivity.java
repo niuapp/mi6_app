@@ -39,12 +39,14 @@ import static java.lang.Long.parseLong;
 
 public class MainActivity extends AppCompatActivity {
 
-    private final static String rootDir = "show_allAPP";;
+    private final static String rootDir = "show_allAPP";
+    ;
     private GridView gridView;
     private List<ApplicationData> applicationDatas;
     private BaseAdapter adapter;
     private PackageManager mPackageManager;
     private View filterSwitch;
+    private String[] filterArr;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,12 +65,16 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        init();
+    }
+
+    public void init() {
         mPackageManager = getPackageManager();
         applicationDatas = new ArrayList<>();
 
 
         String filterArrStr = readFile(getDir(rootDir) + File.separator + "filter.txt");
-        if (filterArrStr.length() > 0){
+        if (filterArrStr.length() > 0) {
             try {
                 filterArrStr = filterArrStr.substring("--_v_--".length());
             } catch (Exception e) {
@@ -77,13 +83,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         //得到包名集合
-        final String[] filterArr = filterArrStr.split("--_v_--");
+        filterArr = filterArrStr.split("--_v_--");
 
         Arrays.sort(filterArr, new Comparator<String>() {//根据时间排序
             @Override
             public int compare(String o1, String o2) {
                 try {
-                    long o1Time = Long.parseLong(o1.split(",_,")[1]);
+                    long o1Time = parseLong(o1.split(",_,")[1]);
                     long o2Time = parseLong(o2.split(",_,")[1]);
                     if (o2Time == o1Time) return 0;
                     return o2Time > o1Time ? 1 : -1;
@@ -167,7 +173,10 @@ public class MainActivity extends AppCompatActivity {
             }
         };
         gridView.setAdapter(adapter);
+    }
 
+    private void refresh() {
+        applicationDatas.clear();
         new Thread() {
             @Override
             public void run() {
@@ -175,8 +184,7 @@ public class MainActivity extends AppCompatActivity {
                 List<PackageInfo> packageInfos = mPackageManager
                         .getInstalledPackages(PackageManager.GET_UNINSTALLED_PACKAGES);
                 for (PackageInfo packs : packageInfos) {
-                    if ((packs.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) ;
-                    {
+                    if (true || (packs.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
                         ApplicationData mApplicationData = new ApplicationData();
                         mApplicationData.setIcon(packs.applicationInfo
                                 .loadIcon(mPackageManager));
@@ -228,13 +236,20 @@ public class MainActivity extends AppCompatActivity {
         startActivity(i);
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        refresh();
+    }
 
     /**
      * 读取txt文件的内容
+     *
      * @param path 想要读取的文件路径
      * @return 返回文件内容
      */
-    public static String readFile(String path){
+    public static String readFile(String path) {
 
         File file = new File(path);
         if (!file.exists()) {
@@ -246,14 +261,14 @@ public class MainActivity extends AppCompatActivity {
         }
 
         StringBuilder result = new StringBuilder();
-        try{
+        try {
             BufferedReader br = new BufferedReader(new FileReader(file));//构造一个BufferedReader类来读取文件
             String s = null;
-            while((s = br.readLine())!=null){//使用readLine方法，一次读一行
+            while ((s = br.readLine()) != null) {//使用readLine方法，一次读一行
                 result.append(s);
             }
             br.close();
-        }catch(Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return result.toString();

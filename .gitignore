@@ -1,0 +1,10 @@
+build
+.idea
+.gradle
+gradle
+/showallapp/showallapp.iml
+/gradlew.bat
+/local.properties
+/mi6_app.iml
+/gradlew
+/app/app.iml
