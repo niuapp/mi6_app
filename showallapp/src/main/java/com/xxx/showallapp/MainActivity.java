@@ -24,12 +24,9 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-
-import static java.lang.Long.parseLong;
 
 
 //if (goodsList_drawerLayout != null && goodsList_drawerLayout.isDrawerOpen(Gravity.RIGHT)) {
@@ -40,7 +37,6 @@ import static java.lang.Long.parseLong;
 public class MainActivity extends AppCompatActivity {
 
     private final static String rootDir = "show_allAPP";
-    ;
     private GridView gridView;
     private List<ApplicationData> applicationDatas;
     private BaseAdapter adapter;
@@ -85,20 +81,20 @@ public class MainActivity extends AppCompatActivity {
         //得到包名集合
         filterArr = filterArrStr.split("--_v_--");
 
-        Arrays.sort(filterArr, new Comparator<String>() {//根据时间排序
-            @Override
-            public int compare(String o1, String o2) {
-                try {
-                    long o1Time = parseLong(o1.split(",_,")[1]);
-                    long o2Time = parseLong(o2.split(",_,")[1]);
-                    if (o2Time == o1Time) return 0;
-                    return o2Time > o1Time ? 1 : -1;
-                } catch (NumberFormatException e) {
-                    e.printStackTrace();
-                }
-                return 0;
-            }
-        });
+//        Arrays.sort(filterArr, new Comparator<String>() {//根据时间排序
+//            @Override
+//            public int compare(String o1, String o2) {
+//                try {
+//                    long o1Time = parseLong(o1.split(",_,")[1]);
+//                    long o2Time = parseLong(o2.split(",_,")[1]);
+//                    if (o2Time == o1Time) return 0;
+//                    return o2Time > o1Time ? 1 : -1;
+//                } catch (NumberFormatException e) {
+//                    e.printStackTrace();
+//                }
+//                return 0;
+//            }
+//        });
 
         gridView = (GridView) findViewById(R.id.allAppList);
         gridView.setNumColumns(4);
@@ -143,7 +139,7 @@ public class MainActivity extends AppCompatActivity {
                         } else {
 
                             //添加
-                            writeFile(("--_v_--" + applicationData.getPackageName() + ",_," + applicationData.getUpdateTime() + ",_," + applicationData.getAppName() + "\n").getBytes(), getDir(rootDir) + File.separator + "filter.txt", true);
+                            writeFile(("--_v_--" + applicationData.getPackageName() + ",_," + /*applicationData.getUpdateTime() + ",_," + */applicationData.getAppName() + "\n").getBytes(), getDir(rootDir) + File.separator + "filter.txt", true);
                             applicationDatas.remove(position);
                             notifyDataSetChanged();
                         }
@@ -185,14 +181,24 @@ public class MainActivity extends AppCompatActivity {
                         .getInstalledPackages(PackageManager.GET_UNINSTALLED_PACKAGES);
                 for (PackageInfo packs : packageInfos) {
                     if (true || (packs.applicationInfo.flags & ApplicationInfo.FLAG_SYSTEM) == 0) {
-                        ApplicationData mApplicationData = new ApplicationData();
-                        mApplicationData.setIcon(packs.applicationInfo
-                                .loadIcon(mPackageManager));
-                        mApplicationData.setAppName(packs.applicationInfo.loadLabel(
-                                mPackageManager).toString());
-                        mApplicationData.setPackageName(packs.packageName);
-                        mApplicationData.setUpdateTime(packs.lastUpdateTime);
-                        applicationDatas.add(mApplicationData);
+                        boolean filterFlag = true;//两次遍历有问题，暂时这样解决
+                        for (int i = 0; i < filterArr.length; i++) {
+                            if (TextUtils.equals(packs.packageName, filterArr[i].split(",_,")[0])){
+                                filterFlag = false;
+                                break;
+                            }
+                        }
+                        if (filterFlag){
+                            ApplicationData mApplicationData = new ApplicationData();
+                            mApplicationData.setIcon(packs.applicationInfo
+                                    .loadIcon(mPackageManager));
+                            mApplicationData.setAppName(packs.applicationInfo.loadLabel(
+                                    mPackageManager).toString());
+                            mApplicationData.setPackageName(packs.packageName);
+                            mApplicationData.setUpdateTime(packs.lastUpdateTime);
+                            applicationDatas.add(mApplicationData);
+                        }
+
 
                     }
                 }
@@ -208,16 +214,16 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        int i = 0;
-                        for (int j = 0; j < filterArr.length; j++) {
-                            for (; i < applicationDatas.size(); i++) {
-                                if (TextUtils.equals(applicationDatas.get(i).getPackageName() + "", filterArr[j].split(",_,")[0])) {
-                                    applicationDatas.remove(i);
-//                                    i--;//不变，直接不更改
-                                    break;//一个一个对应
-                                }
-                            }
-                        }
+//                        int i = 0;
+//                        for (int j = 0; j < filterArr.length; j++) {
+//                            for (; i < applicationDatas.size(); i++) {
+//                                if (TextUtils.equals(applicationDatas.get(i).getPackageName() + "", filterArr[j].split(",_,")[0])) {
+//                                    applicationDatas.remove(i);
+////                                    i--;//不变，直接不更改
+//                                    break;//一个一个对应
+//                                }
+//                            }
+//                        }
                         adapter.notifyDataSetChanged();
                     }
                 });
