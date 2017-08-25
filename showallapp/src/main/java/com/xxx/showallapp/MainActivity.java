@@ -1,14 +1,13 @@
 package com.xxx.showallapp;
 
 import android.content.ComponentName;
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.view.View;
@@ -19,6 +18,11 @@ import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -35,11 +39,11 @@ import static java.lang.Long.parseLong;
 
 public class MainActivity extends AppCompatActivity {
 
+    private final static String rootDir = "show_allAPP";;
     private GridView gridView;
     private List<ApplicationData> applicationDatas;
     private BaseAdapter adapter;
     private PackageManager mPackageManager;
-    private SharedPreferences sharedPreferences;
     private View filterSwitch;
 
     @Override
@@ -62,17 +66,31 @@ public class MainActivity extends AppCompatActivity {
         mPackageManager = getPackageManager();
         applicationDatas = new ArrayList<>();
 
-        sharedPreferences = getSharedPreferences("filter", Context.MODE_PRIVATE);
-        String filterArrStr = sharedPreferences.getString("filterArr", "");
+
+        String filterArrStr = readFile(getDir(rootDir) + File.separator + "filter.txt");
+        if (filterArrStr.length() > 0){
+            try {
+                filterArrStr = filterArrStr.substring("--_v_--".length());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
         //得到包名集合
-        final String[] filterArr = filterArrStr.split("-");
+        final String[] filterArr = filterArrStr.split("--_v_--");
+
         Arrays.sort(filterArr, new Comparator<String>() {//根据时间排序
             @Override
             public int compare(String o1, String o2) {
-                long o1Time = Long.parseLong(o1.split(",")[1]);
-                long o2Time = parseLong(o2.split(",")[1]);
-                if (o2Time == o1Time) return 0;
-                return o2Time > o1Time ? 1 : -1;
+                try {
+                    long o1Time = Long.parseLong(o1.split(",_,")[1]);
+                    long o2Time = parseLong(o2.split(",_,")[1]);
+                    if (o2Time == o1Time) return 0;
+                    return o2Time > o1Time ? 1 : -1;
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                }
+                return 0;
             }
         });
 
@@ -117,9 +135,9 @@ public class MainActivity extends AppCompatActivity {
                             Intent i = mPackageManager.getLaunchIntentForPackage(packageName);
                             if (i != null) startActivity(i);
                         } else {
-                            String spFA = sharedPreferences.getString("filterArr", "");
-                            String itemStr = (TextUtils.isEmpty(spFA) ? "" : spFA + "-") + applicationData.getPackageName() + "," + applicationData.getUpdateTime() + "," + applicationData.getAppName();
-                            sharedPreferences.edit().putString("filterArr", itemStr).apply();
+
+                            //添加
+                            writeFile(("--_v_--" + applicationData.getPackageName() + ",_," + applicationData.getUpdateTime() + ",_," + applicationData.getAppName() + "\n").getBytes(), getDir(rootDir) + File.separator + "filter.txt", true);
                             applicationDatas.remove(position);
                             notifyDataSetChanged();
                         }
@@ -185,14 +203,13 @@ public class MainActivity extends AppCompatActivity {
                         int i = 0;
                         for (int j = 0; j < filterArr.length; j++) {
                             for (; i < applicationDatas.size(); i++) {
-                                if (TextUtils.equals(applicationDatas.get(i).getPackageName() + "", filterArr[j].split(",")[0])) {
+                                if (TextUtils.equals(applicationDatas.get(i).getPackageName() + "", filterArr[j].split(",_,")[0])) {
                                     applicationDatas.remove(i);
 //                                    i--;//不变，直接不更改
                                     break;//一个一个对应
                                 }
                             }
                         }
-
                         adapter.notifyDataSetChanged();
                     }
                 });
@@ -209,5 +226,116 @@ public class MainActivity extends AppCompatActivity {
         i.setComponent(new ComponentName(pkg, cls));
         i.setData(Uri.parse("package:" + pageName));
         startActivity(i);
+    }
+
+
+    /**
+     * 读取txt文件的内容
+     * @param path 想要读取的文件路径
+     * @return 返回文件内容
+     */
+    public static String readFile(String path){
+
+        File file = new File(path);
+        if (!file.exists()) {
+            try {
+                file.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        StringBuilder result = new StringBuilder();
+        try{
+            BufferedReader br = new BufferedReader(new FileReader(file));//构造一个BufferedReader类来读取文件
+            String s = null;
+            while((s = br.readLine())!=null){//使用readLine方法，一次读一行
+                result.append(s);
+            }
+            br.close();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        return result.toString();
+    }
+
+    /**
+     * 把字符串数据写入文件
+     *
+     * @param content 需要写入的字符串
+     * @param path    文件路径名称
+     * @param append  是否以添加的模式写入
+     * @return 是否写入成功
+     */
+    public static boolean writeFile(byte[] content, String path, boolean append) {
+        boolean res = false;
+        File f = new File(path);
+        RandomAccessFile raf = null;
+        try {
+            if (f.exists()) {
+                if (!append) {
+                    f.delete();
+                    f.createNewFile();
+                }
+            } else {
+                f.createNewFile();
+            }
+            if (f.canWrite()) {
+                raf = new RandomAccessFile(f, "rw");
+                raf.seek(raf.length());
+                raf.write(content);
+                res = true;
+            }
+        } catch (Exception e) {
+        } finally {
+            if (raf != null) {
+                try {
+                    raf.close();
+                } catch (IOException e) {
+                }
+            }
+        }
+        return res;
+    }
+
+
+    /**
+     * 获取应用目录，当SD卡存在时，获取SD卡上的目录，当SD卡不存在时，获取应用的cache目录
+     */
+    public static String getDir(String name) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(getExternalStoragePath());
+        sb.append(name);
+        sb.append(File.separator);
+        String path = sb.toString();
+        if (createDirs(path)) {
+            return path;
+        } else {
+            return null;
+        }
+    }
+
+    /**
+     * 创建文件夹
+     */
+    public static boolean createDirs(String dirPath) {
+        File file = new File(dirPath);
+        if (!file.exists() || !file.isDirectory()) {
+            return file.mkdirs();
+        }
+        return true;
+    }
+
+    /**
+     * 获取SD下的应用目录
+     */
+    public static String getExternalStoragePath() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(Environment.getExternalStorageDirectory().getAbsolutePath());
+        sb.append(File.separator);
+        sb.append(rootDir);
+        sb.append(File.separator);
+        createDirs(sb.toString());
+        return sb.toString();
     }
 }

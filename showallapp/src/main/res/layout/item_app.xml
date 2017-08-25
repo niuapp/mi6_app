@@ -14,14 +14,15 @@
         android:layout_height="wrap_content">
 
         <ImageView
+            android:src="@drawable/icon_default"
             android:id="@+id/appImg"
-            android:scaleType="centerInside"
+            android:scaleType="fitCenter"
+            android:padding="10dp"
             android:layout_width="70dp"
             android:layout_height="70dp"/>
 
         <TextView
             android:id="@+id/appName"
-            android:layout_marginTop="5dp"
             android:padding="5dp"
             android:text=""
             android:textSize="12sp"

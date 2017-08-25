@@ -2,13 +2,18 @@
 <manifest package="com.xxx.showallapp"
           xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"/>
+
     <application
         android:allowBackup="true"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/icon_default"
         android:label="应用抽屉"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".MainActivity"
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="keyboardHidden|screenSize|orientation"
             android:theme="@style/AppTheme"
             >
             <intent-filter>

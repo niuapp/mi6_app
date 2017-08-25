@@ -45,4 +45,13 @@ public class ApplicationData {
 		return icon;
 	}
 
+	@Override
+	public String toString() {
+		return "ApplicationData{" +
+				"updateTime=" + updateTime +
+				", packageName='" + packageName + '\'' +
+				", appName='" + appName + '\'' +
+				", icon=" + icon +
+				'}';
+	}
 }
